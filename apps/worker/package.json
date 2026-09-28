@@ -1,0 +1,17 @@
+{
+  "name": "@mzok/worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "test": "node --test \"test/*.test.mjs\"",
+    "db:migrate:local": "wrangler d1 migrations apply mzok --local",
+    "db:migrate:remote": "wrangler d1 migrations apply mzok --remote",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "miniflare": "5.20260921.0-alpha",
+    "wrangler": "4.136.3"
+  }
+}

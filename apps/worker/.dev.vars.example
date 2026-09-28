@@ -1,0 +1,3 @@
+# wrangler dev 전용 비밀값. 복사해서 .dev.vars 로 쓴다 (.dev.vars 는 git 밖).
+# 배포본의 값은 `wrangler secret put MZOK_TOKEN` 으로 따로 넣는다.
+MZOK_TOKEN=dev-token

@@ -1,0 +1,10 @@
+{
+  "name": "mzok",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "pnpm -r test",
+    "dev": "pnpm --filter @mzok/worker dev"
+  },
+  "packageManager": "pnpm@11.1.0"
+}

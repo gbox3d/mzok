@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<meta name="referrer" content="no-referrer">
+<!-- 토큰을 다루는 페이지다. GitHub Pages 는 응답 헤더를 못 붙이니 여기서 건다: https 말고는 어디로도 연결하지 못한다. -->
+<meta http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src https:; img-src data:; base-uri 'none'; form-action 'none'">
+<title>MZOK</title>
+<link rel="icon" href="data:,">
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #f5f6f8; --card: #fff; --fg: #1b1f24; --muted: #697386; --line: #e3e6eb;
+    --accent: #2458d6; --bad: #c0362c; --code: #eef1f5;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1115; --card: #171a21; --fg: #e6e8eb; --muted: #8b93a1; --line: #272c36;
+      --accent: #7aa7ff; --bad: #ff7b72; --code: #20242d;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg);
+         font: 15px/1.5 system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 24px 16px 48px; }
+  header { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+  h1 { font-size: 22px; margin: 0; letter-spacing: .02em; }
+  .muted { color: var(--muted); }
+  .spacer { flex: 1; }
+  button, input { font: inherit; }
+  button { padding: 6px 12px; border: 1px solid var(--line); border-radius: 6px;
+           background: var(--card); color: var(--fg); cursor: pointer; }
+  button:hover { border-color: var(--accent); }
+  .primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  #msg { color: var(--bad); min-height: 1.5em; margin: 0 0 12px; }
+  form { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 10px 12px; align-items: center;
+         background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
+  form input { width: 100%; padding: 7px 10px; border: 1px solid var(--line);
+               border-radius: 6px; background: var(--bg); color: var(--fg); }
+  form button { grid-column: 2; justify-self: start; }
+  ul { list-style: none; margin: 0; padding: 0; }
+  li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: start;
+       background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+       padding: 10px 12px; margin-bottom: 8px; }
+  summary { cursor: pointer; display: flex; gap: 10px; align-items: baseline; min-width: 0; }
+  summary .id { font-weight: 600; }
+  summary .host { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+  summary .age { margin-left: auto; color: var(--muted); white-space: nowrap; font-size: 13px; }
+  dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 14px; margin: 12px 0 4px; }
+  dt { color: var(--muted); }
+  dd { margin: 0; overflow-wrap: anywhere; }
+  code { background: var(--code); padding: 1px 5px; border-radius: 4px; font-size: 13px; }
+  a.go { text-decoration: none; padding: 3px 10px; border: 1px solid var(--accent); border-radius: 6px;
+         color: var(--accent); white-space: nowrap; font-size: 14px; }
+  a.go:hover { background: var(--accent); color: #fff; }
+  .copy { padding: 1px 8px; font-size: 12px; margin-left: 6px; }
+  footer { margin-top: 32px; font-size: 13px; overflow-wrap: anywhere; }
+  footer a { color: inherit; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>MZOK</h1>
+    <span class="muted">기기 ID → 터널 주소</span>
+    <span class="spacer"></span>
+    <button id="refresh" type="button" hidden>새로고침</button>
+    <button id="logout" type="button" hidden>로그아웃</button>
+  </header>
+
+  <p id="msg" role="alert"></p>
+
+  <form id="login" hidden>
+    <label for="base">서버 주소</label>
+    <input id="base" type="url" placeholder="https://….workers.dev" autocomplete="url" required>
+    <label for="token">토큰</label>
+    <input id="token" type="password" autocomplete="current-password" required>
+    <button class="primary">확인</button>
+  </form>
+
+  <section id="list" hidden>
+    <p id="summary" class="muted"></p>
+    <ul id="devices"></ul>
+  </section>
+
+  <footer id="foot" class="muted" hidden><span id="server"></span> ·
+    <a id="help" target="_blank" rel="noopener noreferrer">API 설명서</a></footer>
+</main>
+
+<template id="row">
+  <li>
+    <details>
+      <summary><span class="id"></span><span class="host"></span><span class="age"></span></summary>
+      <dl>
+        <dt>ID</dt><dd><code class="id"></code></dd>
+        <dt>주소</dt><dd><code class="url"></code><button type="button" class="copy">복사</button></dd>
+        <dt>마지막 갱신</dt><dd class="when"></dd>
+        <dt>UTC</dt><dd><code class="iso"></code></dd>
+      </dl>
+    </details>
+    <a class="go" target="_blank" rel="noopener noreferrer">바로가기 ↗</a>
+  </li>
+</template>
+
+<script>
+// 서버 주소와 토큰은 이 브라우저에만 둔다 — 이 페이지와 저장소에는 둘 다 적지 않는다.
+// gbox3d.github.io 아래의 Pages 는 모두 한 출처라 localStorage 를 함께 쓴다. 그래서 토큰은 이 탭에만
+// (sessionStorage, 탭을 닫으면 지워진다) 두고, localStorage 에는 서버 주소만 남긴다.
+// 서버(Worker)는 이 출처(https://gbox3d.github.io)에만 CORS 를 열어 둔다.
+const $ = (id) => document.getElementById(id);
+const where = { base: "localStorage", token: "sessionStorage" };
+const store = {
+  get(k) { try { return window[where[k]].getItem(`mzok.${k}`); } catch { return null; } },
+  set(k, v) { try { window[where[k]].setItem(`mzok.${k}`, v); } catch {} },
+  clear(k) { try { window[where[k]].removeItem(`mzok.${k}`); } catch {} },
+};
+let session = null; // { base, token } — localStorage 를 못 쓰는 브라우저에서도 새로고침이 되게
+
+function show(loggedIn, message = "") {
+  $("login").hidden = loggedIn;
+  $("list").hidden = !loggedIn;
+  $("foot").hidden = !loggedIn;
+  $("refresh").hidden = !loggedIn;
+  $("logout").hidden = !loggedIn;
+  $("msg").textContent = message;
+  if (!loggedIn) ($("base").value ? $("token") : $("base")).focus();
+}
+
+// 토큰이 평문으로 나가지 않게 https 주소만 받는다.
+function serverOrigin(raw) {
+  try {
+    const u = new URL(raw.trim());
+    return u.protocol === "https:" ? u.origin : null;
+  } catch {
+    return null;
+  }
+}
+
+async function load(base, token) {
+  let res, body = null;
+  try {
+    res = await fetch(`${base}/v1/devices`, { headers: { authorization: `Bearer ${token}` }, cache: "no-store" });
+    body = await res.json();
+  } catch {
+    // 주소가 틀렸거나, 그 서버가 이 페이지에 CORS 를 열지 않았거나, JSON 이 아니다(예: 일일 한도 1027 은 HTML)
+  }
+  if (res?.status === 401) {
+    session = null;
+    store.clear("token");
+    return show(false, "토큰이 맞지 않습니다.");
+  }
+  if (!body?.ok) {
+    const why = res ? `HTTP ${res.status}${body?.message ? " — " + body.message : ""}` : "서버에 닿지 않습니다(주소 확인)";
+    if ($("list").hidden) return show(false, `목록을 못 받았습니다: ${why}`);
+    $("msg").textContent = `새로고침 실패: ${why}`;
+    return;
+  }
+  session = { base, token };
+  store.set("base", base);
+  store.set("token", token);
+  $("server").textContent = base;
+  $("help").href = `${base}/api/help`;
+  render(body.devices);
+  show(true);
+}
+
+function render(devices) {
+  $("summary").textContent = devices.length
+    ? `기기 ${devices.length}대 · ${new Date().toLocaleTimeString("ko-KR")} 에 불러옴 · 줄을 누르면 상세`
+    : "등록된 기기가 없습니다. PUT /v1/devices/<id> 로 넣으면 여기에 나옵니다.";
+  $("devices").replaceChildren(...devices.map((d) => {
+    const li = $("row").content.firstElementChild.cloneNode(true);
+    const q = (sel) => li.querySelector(sel);
+    q("summary .id").textContent = d.id;
+    q("summary .host").textContent = d.url.replace(/^https?:\/\//, "");
+    q("summary .age").textContent = ago(d.updatedAt);
+    q("dd .id").textContent = d.id;
+    q(".url").textContent = d.url;
+    q(".when").textContent = `${new Date(d.updatedAt).toLocaleString("ko-KR")} (${ago(d.updatedAt)})`;
+    q(".iso").textContent = d.updatedAt;
+    q(".go").href = d.url;
+    q(".copy").onclick = async (e) => {
+      try {
+        await navigator.clipboard.writeText(d.url);
+        e.target.textContent = "복사됨";
+      } catch {
+        e.target.textContent = "복사 실패";
+      }
+      setTimeout(() => (e.target.textContent = "복사"), 1500);
+    };
+    return li;
+  }));
+}
+
+function ago(iso) {
+  const s = Math.max(0, (Date.now() - Date.parse(iso)) / 1000);
+  if (s < 60) return "방금";
+  if (s < 3600) return `${Math.floor(s / 60)}분 전`;
+  if (s < 86400) return `${Math.floor(s / 3600)}시간 전`;
+  return `${Math.floor(s / 86400)}일 전`;
+}
+
+$("login").onsubmit = (e) => {
+  e.preventDefault();
+  const base = serverOrigin($("base").value);
+  if (!base) return show(false, "서버 주소는 https:// 로 시작해야 합니다.");
+  load(base, $("token").value.trim());
+};
+$("refresh").onclick = () => load(session.base, session.token);
+$("logout").onclick = () => {
+  session = null;
+  store.clear("token"); // 서버 주소는 다음 로그인을 위해 남긴다
+  $("token").value = "";
+  $("devices").replaceChildren();
+  show(false);
+};
+
+$("base").value = store.get("base") ?? "";
+const saved = store.get("token");
+$("base").value && saved ? load($("base").value, saved) : show(false);
+</script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+packages:
+  - apps/*
+
+# wrangler 의 로컬 런타임(workerd)과 번들러(esbuild)는 설치 스크립트가 있어야 돈다.
+allowBuilds:
+  esbuild: true
+  workerd: true

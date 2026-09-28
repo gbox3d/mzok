@@ -1,0 +1,16 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "mzok",
+	"main": "src/index.js",
+	"compatibility_date": "2026-09-01",
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "mzok",
+			// `wrangler d1 create mzok --binding DB --update-config` 가 채운다. 테스트는 이 값을 보지 않지만
+			// wrangler dev 의 로컬 D1 은 이 id 로 갈린다 — 바꾼 뒤엔 `d1 migrations apply mzok --local` 을 다시.
+			"database_id": "a2afbe06-dd5e-4a4d-88c5-80c3b71555fa",
+			"migrations_dir": "migrations"
+		}
+	]
+}
