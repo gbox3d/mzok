@@ -15,6 +15,8 @@
 ## 어디서 도는가
 
 - 주소: `__localfiles/.env` 의 `MZOK_URL` — 공개 저장소라 여기 적지 않는다. Cloudflare Workers(무료) + D1. 2026-09-23 배포.
+- 구조와 동작 원리(그림·시뮬레이터): [docs/how-it-works.html](docs/how-it-works.html) —
+  브라우저로는 https://gbox3d.github.io/mzok/how-it-works.html
 - 카드 없이 무료, 잠들지 않는다, 하루 요청 10만(계정 단위, 09:00 KST 에 초기화). 개인용이라 한도는 의미 없다.
 - 결정 근거와 탈락한 후보는 로컬의 `_forAI/memo.md`(실제 장비 주소가 있어 저장소에는 올리지 않는다).
 - workers.dev 이름은 Cloudflare 가 바꿀 수 있다(약관, 1주 전 통지 노력). 보내는 쪽은 주소를 설정 한 곳에 둔다.
@@ -70,6 +72,7 @@ mzok/
 │   ├── test/api.test.mjs     로컬 workerd + 로컬 D1 (node:test)
 │   └── wrangler.jsonc
 ├── docs/index.html           관리 페이지 (GitHub Pages)
+├── docs/how-it-works.html    구조와 동작 원리 문서
 ├── __localfiles/             (git 밖) .env · test.http
 └── _forAI/                   (git 밖) AI 작업 메모
 ```
