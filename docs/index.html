@@ -142,7 +142,9 @@ function serverOrigin(raw) {
 async function load(base, token) {
   let res, body = null;
   try {
-    res = await fetch(`${base}/v1/devices`, { headers: { authorization: `Bearer ${token}` }, cache: "no-store" });
+    // cache 옵션은 주지 않는다 — "no-store" 를 주면 크롬이 preflight 기억까지 건너뛰어 호출마다 OPTIONS 가 붙는다.
+    // (응답은 서버가 cache-control: no-store 로 보내니 낡은 목록이 남지 않는다.)
+    res = await fetch(`${base}/v1/devices`, { headers: { authorization: `Bearer ${token}` } });
     body = await res.json();
   } catch {
     // 주소가 틀렸거나, 그 서버가 이 페이지에 CORS 를 열지 않았거나, JSON 이 아니다(예: 일일 한도 1027 은 HTML)
